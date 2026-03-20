@@ -26,13 +26,11 @@ class BackboneConfig:
 
     checkpoint_path: Path = field(
         default_factory=lambda: Path(
-
-            #hyperfree_floga_semisupervised_best_firstrun.pt    hyperfree_floga_semisupervised_best_secondrun.pt    HyperFree-b.pth     hyperfree_floga_centerloss_best.pt
-
             os.getenv("HYPERFREE_BACKBONE_CKPT", "ckpt/hyperfree_floga_semisupervised_best_fourthrun.pt")      
         )
     )
-    output_dir: Path = Path("../../../../data/datasets/hyperfree/Extracted Features/features")
+    # Ho corretto questo path per assicurarmi che scriva nella TUA cartella
+    output_dir: Path = Path("/data/datasets/ndepalma/hyperfree/Extracted_Features/features")
 
     batch_size: int = 2
     num_workers: int = 0
@@ -40,61 +38,29 @@ class BackboneConfig:
 
     img_size: int = 1024
     vit_patch_size: int = 16
-    gsd_meters: float | None = None
-
     device: str = "cuda:0"
 
     def __post_init__(self) -> None:
+        # Nota: Ho rimosso i ../../../../ e messo i path diretti /data/datasets/
         dataset_defaults = {
             "activefire": {
-                "data_dir": Path("../../../../data/datasets/ActiveFire/Asia_NoThermal"),
-                "wavelengths": Path("../wavelengths_landsat8_no_thermal.npy"),
+                "data_dir": Path("/data/datasets/ActiveFire/Asia_NoThermal"),
+                "wavelengths": Path("/data/datasets/ndepalma/HyperfreeBackbone-ActiveFireNoThermal/HyperFreeBackbone/wavelengths_landsat8_no_thermal.npy"),
                 "gsd_meters": 30.0,
             },
             "hyperseg": {
-                "data_dir": Path("../../../../data/datasets/HyperSeg/HyperSeg_Full"),
-                "wavelengths": Path("../wavelengths_hyperseg.npy"),
+                "data_dir": Path("/data/datasets/HyperSeg/HyperSeg_Full"),
+                "wavelengths": Path("/data/datasets/ndepalma/HyperfreeBackbone-ActiveFireNoThermal/HyperFreeBackbone/wavelengths_hyperseg.npy"),
                 "gsd_meters": 3.3,
             },
-            "hyperseg8bands": {
-                "data_dir": Path("../../../../data/datasets/HyperSeg/HyperSeg_8bands"),
-                "wavelengths": Path("../wavelengths_landsat8_no_thermal.npy"),
-                "gsd_meters": 3.3,
-            },
-            "spectralearth": {
-                "data_dir": Path("../../../../vandal/datasets/spectralearth/enmap_subset"),
-                "wavelengths": Path("../wavelengths_spectralearth.npy"),
-                "gsd_meters": 30.0,
-            },
-            "spectralearth7bands": {
-                "data_dir": Path("../../../../data/datasets/SpectralEarth/enmap_subset_7bands_srf"),
-                "wavelengths": Path("../wavelengths_spectralearth_7bands.npy"),
-                "gsd_meters": 30.0,
-            },
-            "copernicuspretrain": {
-                "data_dir": Path("../../../../data/datasets/CopernicusPretrain/raw_geotiffs_220k_aligned/s2_toa_mix/images"),
-                "wavelengths": Path("../wavelengths_copernicus.npy"),
-                "gsd_meters": 10.0,
-            },
-            "flogapre": {
-                "data_dir": Path("../../../../data/datasets/FLOGA/FLOGA_PRE"),
-                "wavelengths": Path("../wavelengths_floga.npy"),
-                "gsd_meters": 20.0,
-            },
-            "flogapost": {
-                "data_dir": Path("../../../../data/datasets/FLOGA/FLOGA_POST"),
-                "wavelengths": Path("../wavelengths_floga.npy"),
-                "gsd_meters": 20.0,
-            },
-            # ---- NEW: floga merges both folders ----
             "floga": {
                 "data_dirs": [
-                    Path("../../../../data/datasets/FLOGA/FLOGA_PRE"),
-                    Path("../../../../data/datasets/FLOGA/FLOGA_POST"),
+                    Path("/data/datasets/FLOGA/FLOGA_PRE"),
+                    Path("/data/datasets/FLOGA/FLOGA_POST"),
                 ],
-                "wavelengths": Path("../wavelengths_floga.npy"),
+                "wavelengths": Path("/data/datasets/ndepalma/HyperfreeBackbone-ActiveFireNoThermal/wavelengths_floga.npy"),
                 "gsd_meters": 20.0,
-                "images_csv": Path("../../../../data/datasets/FLOGA/finetuning data/floga_splits/images_test_semisupervised.csv"),
+                "images_csv": Path("/data/datasets/FLOGA/finetuning data/floga_splits/images_test_semisupervised.csv"),
             },
         }
 
@@ -104,33 +70,19 @@ class BackboneConfig:
 
         defaults = dataset_defaults[key]
 
-        # ---------------------------------------------------------
-        # SPECIAL HANDLING FOR "floga" → uses multi-directory mode
-        # ---------------------------------------------------------
         if key == "floga":
-            # If user passed data_dirs manually, use them
             if self.data_dirs is not None:
                 self.data_dirs = [Path(p) for p in self.data_dirs]
             else:
-                # Otherwise use defaults
                 self.data_dirs = defaults["data_dirs"]
-
-            self.data_dir = None  # disable single-dir mode completely
-
-        # ---------------------------------------------------------
-        # ALL OTHER DATASETS → legacy single-directory mode
-        # ---------------------------------------------------------
+            self.data_dir = None 
         else:
             if self.data_dir is None:
                 self.data_dir = defaults["data_dir"]
             else:
                 self.data_dir = Path(self.data_dir)
+            self.data_dirs = None 
 
-            self.data_dirs = None  # ensure multi-folder mode off
-
-        # ---------------------------------------------------------
-        # Shared default handling
-        # ---------------------------------------------------------
         if self.wavelengths_path is None:
             self.wavelengths_path = defaults["wavelengths"]
         else:
